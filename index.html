@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Fornecimento — Acesso ao e-mail</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#141821; --panel-2:#1b2130; --border:#252c3a;
+    --text:#e8ecf4; --muted:#8b93a7; --accent:#e11d2a; --accent-2:#ff5147;
+    --danger:#ff6b6b; --ok:#37d399; --radius:14px;
+    --shadow:0 18px 50px rgba(0,0,0,.45);
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#eef1f7; --panel:#ffffff; --panel-2:#f4f6fb; --border:#e2e7f0;
+      --text:#141824; --muted:#5c6478; --shadow:0 18px 50px rgba(20,30,60,.12);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(225,29,42,.18), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(255,81,71,.16), transparent 55%),
+      var(--bg);
+    color:var(--text); -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; min-height:100%;
+  }
+  .wrap{width:100%; max-width:1080px; margin:0 auto; padding:24px; flex:1; display:flex; flex-direction:column}
+  header.topbar{display:flex; align-items:center; gap:12px; margin-bottom:22px}
+  .logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;font-size:20px;box-shadow:0 8px 22px rgba(225,29,42,.4)}
+  .brand{font-weight:700;font-size:18px;letter-spacing:.2px}
+  .brand small{display:block;font-weight:500;font-size:12px;color:var(--muted);letter-spacing:.3px}
+  .spacer{flex:1}
+  .ghost-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
+    padding:8px 14px;border-radius:10px;cursor:pointer;font-size:13px;transition:.15s}
+  .ghost-btn:hover{color:var(--text);border-color:var(--accent)}
+
+  /* LOGIN */
+  .login-shell{flex:1;display:grid;place-items:center}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:34px 30px;width:100%;max-width:420px}
+  .card h1{margin:0 0 6px;font-size:22px}
+  .card p.sub{margin:0 0 22px;color:var(--muted);font-size:14px;line-height:1.5}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:14px 0 6px;font-weight:600;letter-spacing:.3px}
+  input[type=text],input[type=password]{
+    width:100%;padding:13px 14px;border-radius:11px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);font-size:15px;outline:none;transition:.15s}
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(225,29,42,.2)}
+  .btn{width:100%;margin-top:22px;padding:13px;border:none;border-radius:11px;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:15px;font-weight:600;
+    transition:.15s;box-shadow:0 10px 26px rgba(225,29,42,.35)}
+  .btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .btn:disabled{opacity:.6;cursor:default;transform:none}
+  .hint{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.5;text-align:center}
+  .msg{margin-top:16px;padding:11px 13px;border-radius:10px;font-size:13.5px;display:none}
+  .msg.err{display:block;background:rgba(255,107,107,.12);color:var(--danger);border:1px solid rgba(255,107,107,.3)}
+  .msg.info{display:block;background:rgba(225,29,42,.1);color:var(--accent);border:1px solid rgba(225,29,42,.28)}
+
+  /* INBOX */
+  .inbox{display:none;flex:1;flex-direction:column;gap:16px}
+  .inbox.active{display:flex}
+  .acct-bar{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border);
+    border-radius:12px;padding:12px 16px}
+  .acct-bar .addr{font-weight:600;font-size:14px;word-break:break-all}
+  .acct-bar .count{color:var(--muted);font-size:13px}
+  .grid{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:16px;flex:1;min-height:0}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}.reader.mobile-hidden{display:none}}
+  .list,.reader{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .list{min-height:0}
+  .list-scroll{overflow-y:auto}
+  .mail{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.12s}
+  .mail:hover{background:var(--panel-2)}
+  .mail.sel{background:var(--panel-2);box-shadow:inset 3px 0 0 var(--accent)}
+  .mail .from{font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;gap:8px}
+  .mail .from .date{font-weight:400;color:var(--muted);font-size:11.5px;white-space:nowrap}
+  .mail .subj{font-size:13px;margin-top:3px;color:var(--text)}
+  .mail .intro{font-size:12px;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .empty{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px}
+  .reader{min-height:0}
+  .reader-head{padding:16px 18px;border-bottom:1px solid var(--border)}
+  .reader-head .rsubj{font-size:16px;font-weight:700;margin:0 0 4px}
+  .reader-head .rfrom{font-size:13px;color:var(--muted)}
+  .reader-back{display:none;background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:0 0 10px}
+  @media (max-width:820px){.reader-back{display:inline-block}}
+  .reader-body{flex:1;min-height:0}
+  .reader-body iframe{width:100%;height:100%;border:none;background:#fff}
+  .reader-placeholder{flex:1;display:grid;place-items:center;color:var(--muted);font-size:14px;padding:30px;text-align:center}
+  .toolbar{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);align-items:center}
+  .toolbar .t-title{font-weight:600;font-size:13px;color:var(--muted);flex:1}
+  .icon-btn{background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:9px;
+    padding:7px 12px;cursor:pointer;font-size:12.5px;transition:.15s}
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:18px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div class="logo">✉️</div>
+    <div class="brand">Fornecimento<small>Acesse a caixa do seu e-mail</small></div>
+    <div class="spacer"></div>
+    <button class="ghost-btn" id="logoutBtn" style="display:none">Sair</button>
+  </header>
+
+  <!-- LOGIN -->
+  <div class="login-shell" id="loginShell">
+    <div class="card">
+      <h1>Entrar na caixa</h1>
+      <p class="sub">Use o <b>e-mail</b> e a <b>senha</b> da sua conta para ler as mensagens recebidas (código de verificação, etc.).</p>
+      <form id="loginForm">
+        <label for="email">E-mail</label>
+        <input type="text" id="email" autocomplete="username" placeholder="exemplo@duckmail.sbs" spellcheck="false" autocapitalize="off">
+        <label for="password">Senha</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
+        <button class="btn" type="submit" id="loginBtn">Entrar</button>
+      </form>
+      <div class="msg" id="loginMsg"></div>
+      <button class="btn" type="button" id="recreateBtn" style="display:none;margin-top:12px;background:linear-gradient(135deg,#37d399,#2bb385);box-shadow:0 10px 26px rgba(55,211,153,.3)">Recriar caixa e entrar</button>
+      <div class="hint">A senha da caixa é a mesma senha entregue com a sua conta.</div>
+    </div>
+  </div>
+
+  <!-- INBOX -->
+  <div class="inbox" id="inbox">
+    <div class="msg info" id="inboxBanner" style="display:none;margin:0"></div>
+    <div class="acct-bar">
+      <div class="logo" style="width:32px;height:32px;font-size:16px">📥</div>
+      <div>
+        <div class="addr" id="acctAddr"></div>
+        <div class="count" id="acctCount"></div>
+      </div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="refreshBtn">↻ Atualizar</button>
+    </div>
+    <div class="grid">
+      <div class="list">
+        <div class="toolbar">
+          <span class="t-title">Mensagens</span>
+          <label style="display:flex;align-items:center;gap:6px;margin:0;color:var(--muted);font-size:12px;cursor:pointer">
+            <input type="checkbox" id="autoRefresh"> auto
+          </label>
+        </div>
+        <div class="list-scroll" id="mailList"></div>
+      </div>
+      <div class="reader mobile-hidden" id="reader">
+        <div class="reader-placeholder" id="readerPh">Selecione uma mensagem para ler.</div>
+        <div style="display:none;flex-direction:column;flex:1;min-height:0" id="readerContent">
+          <div class="reader-head">
+            <button class="reader-back" id="backBtn">‹ Voltar</button>
+            <div class="rsubj" id="rSubj"></div>
+            <div class="rfrom" id="rFrom"></div>
+          </div>
+          <div class="reader-body"><iframe id="rBody" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Fornecimento — serviço de acesso à caixa de e-mail.<br>© 2026 Fornecimento. Todos os direitos reservados.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ===== CONFIG =====
+  const API = "https://api.duckmail.sbs";      // API do DuckMail
+  const AUTO_REFRESH_MS = 10000;               // intervalo do "auto"
+
+  // ===== estado =====
+  let bearer = null, currentAddr = "", messages = [], selectedId = null, timer = null;
+  let lastEmail = "", lastPass = "", recreatedNote = false;
+
+  // ===== helpers DOM =====
+  const $ = (id)=>document.getElementById(id);
+  const loginShell=$("loginShell"), inbox=$("inbox"), loginForm=$("loginForm"),
+        loginBtn=$("loginBtn"), loginMsg=$("loginMsg"), logoutBtn=$("logoutBtn"),
+        recreateBtn=$("recreateBtn");
+
+  function showMsg(t, kind){ loginMsg.className="msg "+kind; loginMsg.textContent=t; }
+  function clearMsg(){ loginMsg.className="msg"; loginMsg.textContent=""; }
+  function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+  function fmtDate(iso){
+    if(!iso) return "";
+    const d=new Date(iso); if(isNaN(d)) return "";
+    const now=new Date(), sameDay=d.toDateString()===now.toDateString();
+    return sameDay ? d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})
+                   : d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  }
+
+  // ===== API =====
+  async function apiLogin(address, password){
+    const r = await fetch(API+"/token",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({address, password})
+    });
+    if(!r.ok) throw {status:r.status};
+    return (await r.json()).token;
+  }
+  // recria a caixa (mesmo endereco+senha). Retorna o status HTTP:
+  //  201 = recriada (estava livre/expirada)  |  422 = ja existe (senha errada)
+  async function apiCreate(address, password){
+    const r = await fetch(API+"/accounts",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({address, password, expiresIn:0})
+    });
+    return r.status;
+  }
+  async function apiList(){
+    const r = await fetch(API+"/messages",{headers:{Authorization:"Bearer "+bearer}});
+    if(!r.ok) throw {status:r.status};
+    const j = await r.json();
+    return j["hydra:member"] || [];
+  }
+  async function apiRead(id){
+    const r = await fetch(API+"/messages/"+id,{headers:{Authorization:"Bearer "+bearer}});
+    if(!r.ok) throw {status:r.status};
+    return await r.json();
+  }
+
+  // ===== render =====
+  function renderList(){
+    const wrap=$("mailList");
+    $("acctAddr").textContent=currentAddr;
+    $("acctCount").textContent=messages.length ? messages.length+" mensagem(ns)" : "caixa vazia";
+    if(!messages.length){ wrap.innerHTML='<div class="empty">Nenhuma mensagem ainda.<br>Clique em “Atualizar” após pedir o código.</div>'; return; }
+    wrap.innerHTML = messages.map(m=>{
+      const from=(m.from&&m.from.address)||"?";
+      const sel = m.id===selectedId ? " sel":"";
+      return `<div class="mail${sel}" data-id="${esc(m.id)}">
+        <div class="from"><span>${esc(from)}</span><span class="date">${fmtDate(m.createdAt)}</span></div>
+        <div class="subj">${esc(m.subject||"(sem assunto)")}</div>
+        <div class="intro">${esc(m.intro||"")}</div>
+      </div>`;
+    }).join("");
+    wrap.querySelectorAll(".mail").forEach(el=>{
+      el.addEventListener("click", ()=>openMail(el.getAttribute("data-id")));
+    });
+  }
+
+  async function openMail(id){
+    selectedId=id; renderList();
+    $("readerPh").style.display="none";
+    $("readerContent").style.display="flex";
+    $("reader").classList.remove("mobile-hidden");
+    $("rSubj").textContent="Carregando…"; $("rFrom").textContent="";
+    $("rBody").srcdoc="";
+    try{
+      const d = await apiRead(id);
+      $("rSubj").textContent = d.subject || "(sem assunto)";
+      const from=(d.from&&(d.from.name?d.from.name+" <"+d.from.address+">":d.from.address))||"?";
+      $("rFrom").textContent = from + "  •  " + fmtDate(d.createdAt);
+      let html = Array.isArray(d.html) ? d.html.join("") : (d.html||"");
+      if(!html){ html = "<pre style='white-space:pre-wrap;font-family:inherit;padding:16px'>"+esc(d.text||"(sem conteúdo)")+"</pre>"; }
+      $("rBody").srcdoc = "<!doctype html><meta charset=utf-8><base target=_blank><style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#111;margin:0;padding:16px}</style>"+html;
+    }catch(e){
+      $("rSubj").textContent="Erro ao abrir a mensagem";
+      $("rFrom").textContent = e.status===401 ? "Sessão expirada — faça login de novo." : "";
+    }
+  }
+
+  async function refresh(){
+    const btn=$("refreshBtn"); const prev=btn.innerHTML; btn.innerHTML='<span class="spin"></span> …';
+    try{
+      messages = await apiList();
+      // mantem ordem por data desc
+      messages.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+      renderList();
+    }catch(e){
+      if(e.status===401){ doLogout(); showMsg("Sessão expirada. Entre novamente.","info"); }
+    }finally{ btn.innerHTML=prev; }
+  }
+
+  // ===== fluxo login/logout =====
+  function enterInbox(){
+    loginShell.style.display="none";
+    recreateBtn.style.display="none";
+    inbox.classList.add("active");
+    logoutBtn.style.display="inline-block";
+    const banner=$("inboxBanner");
+    if(recreatedNote){
+      banner.textContent="Caixa recriada — ela está vazia agora, mas volta a receber e-mails novos (código de verificação, etc.) aqui.";
+      banner.style.display="block"; recreatedNote=false;
+    }else{ banner.style.display="none"; }
+    refresh();
+  }
+  function doLogout(){
+    bearer=null; currentAddr=""; messages=[]; selectedId=null;
+    if(timer){clearInterval(timer);timer=null;} $("autoRefresh").checked=false;
+    inbox.classList.remove("active"); logoutBtn.style.display="none";
+    loginShell.style.display="grid"; recreateBtn.style.display="none"; clearMsg();
+    $("readerContent").style.display="none"; $("readerPh").style.display="grid";
+    $("password").value="";
+  }
+
+  loginForm.addEventListener("submit", async (e)=>{
+    e.preventDefault(); clearMsg(); recreateBtn.style.display="none";
+    let email=$("email").value.trim(), pass=$("password").value.trim();
+    // aceita colar "email:senha" ou "email:senha:token"
+    if(!pass && email.includes(":")){ const p=email.split(":"); email=p[0].trim(); pass=(p[1]||"").trim(); $("email").value=email; }
+    if(!email||!pass){ showMsg("Preencha e-mail e senha.","err"); return; }
+    lastEmail=email; lastPass=pass;
+    loginBtn.disabled=true; loginBtn.innerHTML='<span class="spin"></span> Entrando…';
+    try{
+      bearer = await apiLogin(email, pass);
+      if(!bearer) throw {status:0};
+      currentAddr=email; enterInbox();
+    }catch(err){
+      if(err.status===401){
+        showMsg("Não foi possível entrar. A caixa pode ter expirado — recrie-a para voltar a usar (ela virá vazia).","info");
+        recreateBtn.style.display="block";
+      }
+      else if(err.status===0 || err.message==="Failed to fetch")
+        showMsg("Não foi possível conectar ao servidor de e-mail. Tente novamente.","err");
+      else showMsg("Erro ao entrar (código "+(err.status||"?")+").","err");
+    }finally{
+      loginBtn.disabled=false; loginBtn.textContent="Entrar";
+    }
+  });
+
+  recreateBtn.addEventListener("click", async ()=>{
+    if(!lastEmail || !lastPass) return;
+    clearMsg(); recreateBtn.disabled=true; recreateBtn.innerHTML='<span class="spin"></span> Recriando…';
+    try{
+      const st = await apiCreate(lastEmail, lastPass);
+      if(st===201 || st===200){
+        // recriada com sucesso -> loga direto
+        bearer = await apiLogin(lastEmail, lastPass);
+        if(!bearer) throw {status:0};
+        currentAddr=lastEmail; recreatedNote=true; enterInbox();
+      } else if(st===422){
+        // endereco ja existe = a caixa nao expirou, a senha e' que esta errada
+        showMsg("A caixa ainda existe — a senha digitada está incorreta.","err");
+        recreateBtn.style.display="none";
+      } else if(st===400 || st===404){
+        showMsg("Não foi possível recriar (o domínio deste e-mail não está mais disponível).","err");
+      } else {
+        showMsg("Falha ao recriar a caixa (código "+st+").","err");
+      }
+    }catch(e){
+      showMsg("Erro de conexão ao recriar a caixa.","err");
+    }finally{
+      recreateBtn.disabled=false; recreateBtn.textContent="Recriar caixa e entrar";
+    }
+  });
+
+  logoutBtn.addEventListener("click", doLogout);
+  $("refreshBtn").addEventListener("click", refresh);
+  $("backBtn").addEventListener("click", ()=>{
+    $("reader").classList.add("mobile-hidden");
+  });
+  $("autoRefresh").addEventListener("change",(e)=>{
+    if(e.target.checked){ timer=setInterval(refresh, AUTO_REFRESH_MS); }
+    else if(timer){ clearInterval(timer); timer=null; }
+  });
+})();
+</script>
+</body>
+</html>
