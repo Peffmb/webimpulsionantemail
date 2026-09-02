@@ -67,6 +67,7 @@
   .scroll::-webkit-scrollbar{width:10px;height:10px}
   .scroll::-webkit-scrollbar-thumb{background:var(--border-2); border-radius:8px; border:2px solid transparent; background-clip:content-box}
   .hidden{display:none !important}
+  [hidden]{display:none !important}
   .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
   /* ============================ HEADER ============================ */
@@ -133,8 +134,6 @@
   .msg.err{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger);border-color:color-mix(in srgb,var(--danger) 30%,transparent)}
   .msg.info{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 28%,transparent)}
   .msg.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok);border-color:color-mix(in srgb,var(--ok) 28%,transparent)}
-  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:1px;margin:20px 0 4px}
-  .divider::before,.divider::after{content:"";height:1px;flex:1;background:var(--border)}
 
   /* ============================ INBOX ============================ */
   .inbox{display:none;flex:1;flex-direction:column;gap:14px;min-height:0}
@@ -286,25 +285,6 @@
 
         <div class="msg" id="loginMsg" role="alert"></div>
         <button class="btn ok" type="button" id="recreateBtn" hidden>Recriar caixa e entrar</button>
-
-        <div class="divider">ou</div>
-        <button class="linkbtn" id="toggleCreate" type="button">Criar uma caixa nova →</button>
-
-        <form id="createForm" hidden autocomplete="off">
-          <label for="newUser">Nome de usuário</label>
-          <div class="field">
-            <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
-            <input type="text" id="newUser" spellcheck="false" autocapitalize="off" placeholder="ex: joao.silva">
-          </div>
-          <label for="newDomain">Domínio</label>
-          <select id="newDomain"><option>carregando…</option></select>
-          <label for="newPass">Senha</label>
-          <div class="field">
-            <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-            <input type="password" id="newPass" autocomplete="new-password" placeholder="defina uma senha">
-          </div>
-          <button class="btn" type="submit" id="createBtn">Criar caixa e entrar</button>
-        </form>
 
         <div class="hint">Suas credenciais ficam somente neste navegador. O serviço não guarda histórico de acesso.</div>
       </div>
@@ -562,9 +542,6 @@
       return req("/accounts", { method:"POST", auth:false, body:{ address:address, password:password, expiresIn:0 } })
         .then(function(d){ return d._status; }, function(e){ return e.status; });
     },
-    domains: function(){
-      return req("/domains", { auth:false }).then(function(d){ return d["hydra:member"] || []; });
-    },
     messages: function(page){
       return req("/messages?page=" + (page||1)).then(function(d){
         return { items: d["hydra:member"] || [], total: d["hydra:totalItems"] != null ? d["hydra:totalItems"] : (d["hydra:member"]||[]).length };
@@ -696,6 +673,15 @@
         return tag.replace(/\bsrc\s*=/gi, "data-blocked-src=");
       }).replace(/background(-image)?\s*:\s*url\([^)]*\)/gi, "");
     }
+    // Todo link do e-mail abre em nova aba (força target/rel mesmo que o HTML
+    // do remetente traga o seu próprio target ou um <base> concorrente).
+    safe = safe.replace(/<base\b[^>]*>/gi, "");
+    safe = safe.replace(/<a\b([^>]*)>/gi, function(_, attrs){
+      attrs = attrs
+        .replace(/\starget\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+        .replace(/\srel\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+      return '<a' + attrs + ' target="_blank" rel="noopener noreferrer">';
+    });
     return '<!doctype html><html><head><meta charset="utf-8"><base target="_blank">' +
       '<meta name="referrer" content="no-referrer">' +
       '<style>html,body{margin:0}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
@@ -984,47 +970,6 @@
       showLoginMsg("Erro de conexão ao recriar a caixa.", "err");
     }).then(function(){
       recreateBtn.disabled = false; recreateBtn.textContent = "Recriar caixa e entrar";
-    });
-  });
-
-  /* -------- create form -------- */
-  var domainsLoaded = false;
-  $("toggleCreate").addEventListener("click", function(){
-    var f = $("createForm");
-    f.hidden = !f.hidden;
-    $("toggleCreate").textContent = f.hidden ? "Criar uma caixa nova →" : "← Voltar para o login";
-    if(!f.hidden && !domainsLoaded){
-      domainsLoaded = true;
-      api.domains().then(function(list){
-        var sel = $("newDomain");
-        var usable = list.filter(function(d){ return d.isActive !== false; });
-        sel.innerHTML = (usable.length ? usable : list).map(function(d){
-          return '<option value="' + esc(d.domain) + '">@' + esc(d.domain) + '</option>';
-        }).join("") || '<option value="">nenhum domínio disponível</option>';
-      }).catch(function(){
-        $("newDomain").innerHTML = '<option value="">falha ao carregar domínios</option>';
-      });
-    }
-  });
-  $("createForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    var user = $("newUser").value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,"");
-    var dom = $("newDomain").value, pass = $("newPass").value;
-    if(!user || !dom || pass.length < 4){ showLoginMsg("Preencha usuário, domínio e uma senha de 4+ caracteres.", "err"); return; }
-    var address = user + "@" + dom;
-    var btn = $("createBtn"); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Criando…';
-    api.createAccount(address, pass).then(function(st){
-      if(st === 201 || st === 200) return api.login(address, pass).then(function(tk){
-        S.remember = $("remember").checked;
-        setSession(tk, address, pass);
-        enterInbox({ banner: "Caixa <b>" + esc(address) + "</b> criada. Já pode usá-la para receber códigos." });
-      });
-      if(st === 422) throw new Error("Esse endereço já está em uso. Escolha outro usuário.");
-      throw new Error("Não foi possível criar a caixa (código " + st + ").");
-    }).catch(function(err){
-      showLoginMsg(err.message || "Falha ao criar a caixa.", "err");
-    }).then(function(){
-      btn.disabled = false; btn.textContent = "Criar caixa e entrar";
     });
   });
 
