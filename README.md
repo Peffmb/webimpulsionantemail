@@ -21,9 +21,10 @@ de verificação — sem precisar de servidor próprio.
 - Atualização automática (15s) com aviso de novas mensagens e notificação do SO
 - Extração automática de **código de verificação** com botão de copiar
 - Busca, filtros (não lidas / com código), paginação ("carregar mais")
-- Leitor em `<iframe sandbox>` com bloqueio opcional de imagens remotas
+- Leitor em `<iframe sandbox>` com bloqueio opcional de imagens remotas;
+  todo link do e-mail abre em nova aba
 - Excluir mensagem, baixar anexos, copiar texto
-- Criar uma caixa nova (escolhendo o domínio) direto pela tela de login
+- "Recriar caixa e entrar" quando o endereço expirou (mesmo e-mail/senha)
 - Tema claro/escuro, responsivo, atalhos de teclado (`/` buscar, `r` atualizar,
   `j`/`k` navegar, `Esc` voltar)
 
